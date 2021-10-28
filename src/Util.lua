@@ -47,6 +47,16 @@ function GenerateTileQuads(atlas)
 end
 
 --[[
+    Generate a random tile appropriate for the current level.
+]]
+function GenerateTile(tileX, tileY, level)
+    return Tile(tileX, tileY, math.random(18), (function ()
+        if level > 1 then return math.random(6) else return 1 end
+    end)())
+    
+end
+
+--[[
     Recursive table printing function.
     https://coronalabs.com/blog/2014/09/02/tutorial-printing-table-contents/
 ]]

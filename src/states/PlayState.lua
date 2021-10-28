@@ -61,7 +61,7 @@ function PlayState:enter(params)
     self.level = params.level
 
     -- spawn a board and place it toward the right
-    self.board = params.board or Board(VIRTUAL_WIDTH - 272, 16)
+    self.board = params.board or Board(VIRTUAL_WIDTH - 272, 16, self.level)
 
     -- grab score from params if it was passed
     self.score = params.score or 0
@@ -194,8 +194,8 @@ function PlayState:calculateMatches()
         gSounds['match']:play()
 
         -- add score for each match
+        self.score = self:getNewScoreFromMatches(self.score, matches)
         for k, match in pairs(matches) do
-            self.score = self.score + #match * 50
             self.timer = self.timer + #match
         end
 
@@ -218,6 +218,24 @@ function PlayState:calculateMatches()
     else
         self.canInput = true
     end
+end
+
+--[[
+    A more complicated scoring mechanism that makes higher tiers of tile variety worth more.
+]]
+function PlayState:getNewScoreFromMatches(currentScore , matches)
+    local newScore = currentScore
+    for k, match in pairs(matches) do
+        for t, tile in pairs(match) do
+            if tile.variety > 1 then
+                newScore = newScore + 100
+            else
+                newScore = newScore + 50
+            end
+        end        
+    end
+    return newScore
+    
 end
 
 function PlayState:render()
