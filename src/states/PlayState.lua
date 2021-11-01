@@ -142,38 +142,40 @@ function PlayState:update(dt)
                 gSounds['error']:play()
                 self.highlightedTile = nil
             else
-                
-                -- swap grid positions of tiles
-                local tempX = self.highlightedTile.gridX
-                local tempY = self.highlightedTile.gridY
 
                 local newTile = self.board.tiles[y][x]
+                --print(newTile)
+                --After the board data is swapped, we want to test if there are indeed matches. If not, play error sound and return the tiles to their original spots.
+                -- If so, then proceed as before.
+                if (not self:testSwap(self.highlightedTile, newTile)) then
+                    gSounds['error']:play()
+                   
+                else
+                    --Do the swap!
+                    self:doSwap(self.highlightedTile, newTile)
 
-                self.highlightedTile.gridX = newTile.gridX
-                self.highlightedTile.gridY = newTile.gridY
-                newTile.gridX = tempX
-                newTile.gridY = tempY
 
-                -- swap tiles in the tiles table
-                self.board.tiles[self.highlightedTile.gridY][self.highlightedTile.gridX] =
-                    self.highlightedTile
+                    -- tween coordinates between the two so they swap
+                    Timer.tween(0.1, {
+                        [self.highlightedTile] = {x = newTile.x, y = newTile.y},
+                        [newTile] = {x = self.highlightedTile.x, y = self.highlightedTile.y}
+                    })
+                    
+                    -- once the swap is finished, we can tween falling blocks as needed
+                    :finish(function()
+                        self:calculateMatches()
+                    end)
 
-                self.board.tiles[newTile.gridY][newTile.gridX] = newTile
+                end
 
-                -- tween coordinates between the two so they swap
-                Timer.tween(0.1, {
-                    [self.highlightedTile] = {x = newTile.x, y = newTile.y},
-                    [newTile] = {x = self.highlightedTile.x, y = self.highlightedTile.y}
-                })
-                
-                -- once the swap is finished, we can tween falling blocks as needed
-                :finish(function()
-                    self:calculateMatches()
-                end)
+
             end
         end
     end
 
+    if not self:testForPossibleMatches() then
+       print("SHOULD RESET THE BOARD HERE!") 
+    end
     Timer.update(dt)
 end
 
@@ -278,4 +280,102 @@ function PlayState:render()
     love.graphics.printf('Score: ' .. tostring(self.score), 20, 52, 182, 'center')
     love.graphics.printf('Goal : ' .. tostring(self.scoreGoal), 20, 80, 182, 'center')
     love.graphics.printf('Timer: ' .. tostring(self.timer), 20, 108, 182, 'center')
+
+    --DEBUG
+   -- self:renderTilesOfConcern()
 end
+
+
+--[[
+    Executes a tile swap. This function affects the board!
+]]
+function PlayState:doSwap(originTile, targetTile)
+    -- swap grid positions of tiles
+    local tempX = originTile.gridX
+    local tempY = originTile.gridY
+
+    originTile.gridX = targetTile.gridX
+    originTile.gridY = targetTile.gridY
+    targetTile.gridX = tempX
+    targetTile.gridY = tempY
+
+    -- swap tiles in the tiles table
+    self.board.tiles[originTile.gridY][originTile.gridX] =
+        originTile
+
+    self.board.tiles[targetTile.gridY][targetTile.gridX] = targetTile
+
+end
+
+
+--[[
+    Tests if swapping these tiles will result in a match. Has
+    no side effects on the board - upon returning, the board is in exactly the state it was when 
+    the function was entered.
+    ]]
+function PlayState:testSwap(originTile, targetTile)
+    local isSwapMatch = false
+    --print(targetTile)
+    -- swap grid positions of tiles
+    local tempX = originTile.gridX
+    local tempY = originTile.gridY
+
+    originTile.gridX = targetTile.gridX
+    originTile.gridY = targetTile.gridY
+    targetTile.gridX = tempX
+    targetTile.gridY = tempY
+
+    -- swap tiles in the tiles table
+    self.board.tiles[originTile.gridY][originTile.gridX] =
+        originTile
+
+    self.board.tiles[targetTile.gridY][targetTile.gridX] = targetTile
+
+    --After the board data is swapped, we want to test if there are indeed matches. If not, play error sound and return the tiles to their original spots.
+    -- If so, then proceed as before.
+    if (not self.board:calculateMatches()) then
+        isSwapMatch = false
+    else
+        isSwapMatch = true
+    end
+    --Restore the board data to the state it was before we did the swap.
+
+    targetTile.gridX = originTile.gridX
+    targetTile.gridY = originTile.gridY
+    originTile.gridX = tempX
+    originTile.gridY = tempY
+    
+
+
+    self.board.tiles[originTile.gridY][originTile.gridX] = originTile
+    self.board.tiles[targetTile.gridY][targetTile.gridX] = targetTile
+
+
+    return isSwapMatch
+
+    
+end
+
+--[[
+    This function tests every possible tile on the board for a move that results in a match.
+]]
+function PlayState:testForPossibleMatches()
+    for y = 1, 8 do
+        for x = 1, 8 do
+            local tileNeighbors = self.board:getNeighbors(self.board.tiles[y][x])
+
+            for k, tile in pairs(tileNeighbors) do
+                local isSwapMatch = self:testSwap(self.board.tiles[y][x], tile)
+                if isSwapMatch then
+                    return true
+                end
+            end
+        end
+    end
+
+    return false
+end
+
+
+
+

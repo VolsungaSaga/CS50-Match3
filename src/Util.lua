@@ -9,7 +9,21 @@
 
     Helper functions for writing Match-3.
 ]]
+--[[
+    Gamble
+    This function returns true with a certain probability (1-100), false otherwise.
+    Assumes that math.random has been seeded already, doesn't seed it itself.
+]]
+function Gamble(probability)
+    local rand = math.random(1,100)
+    if(rand <= probability) then
+        return true
+    
+    else
+        return false
+    end
 
+end
 --[[
     Given an "atlas" (a texture with multiple sprites), generate all of the
     quads for the different tiles therein, divided into tables for each set
@@ -46,14 +60,65 @@ function GenerateTileQuads(atlas)
     return tiles
 end
 
+
+
 --[[
-    Generate a random tile appropriate for the current level.
+    Generate a random tile appropriate for the current level. There's a certain chance that it'll be shiny!
 ]]
 function GenerateTile(tileX, tileY, level)
-    return Tile(tileX, tileY, math.random(18), (function ()
-        if level > 1 then return math.random(6) else return 1 end
-    end)())
+    --Grab an index from our generated subset.
+    local gFramesIndex = gTileSubset[math.random(#gTileSubset)]
+
+
+
+    --Roll a dice!
+    local shiny = Gamble(10)
+    if(shiny) then
+        return ShinyTile(tileX, tileY,gFramesIndex, 
+        (function ()
+            if level > 1 then return math.random(6) else return 1 end
+        end)() )
     
+    else
+        return Tile(tileX, tileY, gFramesIndex, 
+        (function ()
+            if level > 1 then return math.random(6) else return 1 end
+        end)())
+    end
+end
+
+--[[
+    Generates a random subset of a table. Returns a table of indices to the target table.
+]]
+function GenerateTableSubset(target_table, subset_size)
+    local table_subset = {}
+
+    if subset_size > #target_table then
+        return
+    end
+
+    for i = 1, subset_size do
+        local index = math.random(#target_table)
+        while In(table_subset, index) do
+            --Reroll the index
+            index = math.random(#target_table)
+        end
+
+        table.insert(table_subset, index)
+
+    end
+
+    return table_subset
+
+end
+
+function In(table, value)
+    for k, v in pairs(table) do
+        if v == value then
+            return true
+        end
+    end
+    return false
 end
 
 --[[

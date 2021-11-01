@@ -73,6 +73,10 @@ function love.load()
     }
     gStateMachine:change('start')
 
+
+    --This is where we'll put our tile subset table.
+    gTileSubset = GenerateTableSubset(gFrames['tiles'], 9)
+
     -- keep track of scrolling our background on the X axis
     backgroundX = 0
 

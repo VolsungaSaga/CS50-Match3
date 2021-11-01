@@ -18,6 +18,8 @@ Class = require 'lib/class'
 
 push = require 'lib/push'
 
+require 'lib/class_helpers'
+
 -- used for timers and tweening
 Timer = require 'lib/knife.timer'
 
@@ -32,6 +34,7 @@ require 'src/Util'
 -- game pieces
 require 'src/Board'
 require 'src/Tile'
+require 'src/ShinyTile'
 
 -- game states
 require 'src/states/BaseState'
