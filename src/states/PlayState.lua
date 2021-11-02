@@ -68,6 +68,9 @@ function PlayState:enter(params)
 
     -- score we have to reach to get to the next level
     self.scoreGoal = self.level * 1.25 * 1000
+
+
+
 end
 
 function PlayState:update(dt)
@@ -174,7 +177,7 @@ function PlayState:update(dt)
     end
 
     if not self:testForPossibleMatches() then
-       print("SHOULD RESET THE BOARD HERE!") 
+        gStateMachine:change('reset-board', {score = self.score, timer = self.timer, board = self.board})
     end
     Timer.update(dt)
 end
